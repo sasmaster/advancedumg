@@ -2,6 +2,9 @@
 
 
 #include "HPDataSheetBase.h"
+#include "Components/VerticalBox.h"
+#include "Components/DynamicEntryBox.h"
+#include "HPSheetRowBase.h"
 
 
 UHPDataSheetBase::UHPDataSheetBase(const FObjectInitializer& ObjectInitializer)
@@ -61,6 +64,32 @@ void UHPDataSheetBase::ShowRowEditor(bool val)
 			RowEditor->SetPositionInViewport(mousePos, false);
 		}
 	
+	}
+}
+
+void UHPDataSheetBase::AddRow(int32 rowIndex)
+{
+
+	//SheetBox->InsertChildAt(rowIndex,nullptr);//this shit doesn't update the UI so it is better to regenerate
+
+	//SheetheaderBox->Insert
+	const auto allRows = SheetBox->GetAllChildren();
+	for (int32 i = 0; i < allRows.Num(); ++i)
+	{
+		auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
+		sheetRow->RowIndex = i;
+	}
+}
+
+void UHPDataSheetBase::DeleteRow(int32 rowIndex)
+{
+	
+	SheetBox->RemoveChildAt(rowIndex);
+	const auto allRows = SheetBox->GetAllChildren();
+	for (int32 i = 0;i < allRows.Num();++i)
+	{
+		auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
+		sheetRow->RowIndex = i;
 	}
 }
 
