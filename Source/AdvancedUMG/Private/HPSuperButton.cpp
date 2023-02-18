@@ -1,6 +1,6 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 #include "HPSuperButton.h"
- 
+#include "Kismet/GameplayStatics.h"
 UHPSuperButton::UHPSuperButton(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -10,7 +10,11 @@ UHPSuperButton::UHPSuperButton(const FObjectInitializer& ObjectInitializer)
 void UHPSuperButton::PostLoad()
 {
 	Super::PostLoad();
-	OnClicked.AddDynamic(this, &UHPSuperButton::OnLeftDoubleMouseClick);
+
+	if (OnClicked.IsBound()==false)
+	{
+		OnClicked.AddDynamic(this, &UHPSuperButton::OnLeftDoubleMouseClick);
+	}
 }
 
 void UHPSuperButton::OnLeftDoubleMouseClick()
@@ -18,9 +22,9 @@ void UHPSuperButton::OnLeftDoubleMouseClick()
     //https://en.wikipedia.org/wiki/Double-click
 
 	//this requires inclusion of UGameplayStatics
-	//const double now = FTimespan::FromSeconds(UGameplayStatics::GetRealTimeSeconds(GetWorld())).GetTotalMilliseconds();
+	const double now = FTimespan::FromSeconds(UGameplayStatics::GetRealTimeSeconds(GetWorld())).GetTotalMilliseconds();
 	//and this does not:
-	const double now =  FPlatformTime::ToMilliseconds(FPlatformTime::Cycles());
+	//const double now =  FPlatformTime::ToMilliseconds(FPlatformTime::Cycles());
 	const double timeBetweenClicks = now - mStartClickTime;
 	if (timeBetweenClicks < 250.0)
 	{

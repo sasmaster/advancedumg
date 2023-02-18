@@ -16,6 +16,7 @@ class ADVANCEDUMG_API UHPDataSheetBase : public UUserWidget
 
 		UPROPERTY()
 		UUserWidget* RowEditor = nullptr;
+	  //  UButton
 
 protected:
 
