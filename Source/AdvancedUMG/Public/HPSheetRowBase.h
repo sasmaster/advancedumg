@@ -13,7 +13,8 @@ UCLASS()
 class ADVANCEDUMG_API UHPSheetRowBase : public UUserWidget
 {
 	GENERATED_BODY()
-	
+
+		FString mRowKey; // concat of column name (from the header) and row number
 public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)

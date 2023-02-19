@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
+#include "HPDataStructures.h"
 #include "HPDataSheetBase.generated.h"
 
 /**
@@ -16,29 +17,47 @@ class ADVANCEDUMG_API UHPDataSheetBase : public UUserWidget
 
 		UPROPERTY()
 		UUserWidget* RowEditor = nullptr;
-	  //  UButton
-
+ 
 protected:
 
 	void NativeConstruct() override final;
 
 	UFUNCTION()
-		void OnDataSheetVisibilityChanged(ESlateVisibility v);
+	 void OnDataSheetVisibilityChanged(ESlateVisibility v);
+
+	 void GeneateDataSheetA(const UVPDynamicActorData* actorData);
+
 public:
+
+	UHPDataSheetBase(const FObjectInitializer& ObjectInitializer);
+
+	bool Initialize()override final;
 
 	// widgets created in the editor and bound
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
 		class UVerticalBox* SheetBox = nullptr;
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
-	    class UDynamicEntryBox* SheetheaderBox = nullptr;
+		class UDynamicEntryBox* SheetheaderBox = nullptr;
 
-	UHPDataSheetBase(const FObjectInitializer& ObjectInitializer);
 
-	bool Initialize()override final;
-
+	/**
+	* Must be set via editor
+	*/
 	 UPROPERTY(EditAnywhere, Category = HPDataSheetBase)
 	 TSubclassOf<UUserWidget> RowEditorWidgetClass;
+
+	/**
+	* Must be set via editor
+	*/
+	 UPROPERTY(EditAnywhere, Category = HPDataSheetBase)
+		 TSubclassOf<UUserWidget> SheetRowWidgetClass;
+
+	 /**
+	 * Must be set via editor
+	 */
+	 UPROPERTY(EditAnywhere, Category = HPDataSheetBase)
+		 TSubclassOf<UUserWidget> SheetCellWidgetClass;
 
 	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
 	 void ShowRowEditor(bool val);
@@ -48,6 +67,12 @@ public:
 
 	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
 		 void DeleteRow(int32 rowIndex);
+
+	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
+	 void GeneateDataSheetFromCSV(UPARAM(ref) const FString& csvPath);
+
+	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
+	 void GeneateDataSheetForActor(UPARAM(ref) const FString& actorId);
 
 	 UFUNCTION(BlueprintPure, Category = HPDataSheetBase)
 		 UUserWidget* GetRowEditor()

@@ -2,9 +2,12 @@
 
 
 #include "HPDataSheetBase.h"
+#include "HPSheetRowBase.h"
+#include "HPSheetHeaderCellBase.h"
 #include "Components/VerticalBox.h"
 #include "Components/DynamicEntryBox.h"
-#include "HPSheetRowBase.h"
+#include "Components/TextBlock.h"
+
 
 
 UHPDataSheetBase::UHPDataSheetBase(const FObjectInitializer& ObjectInitializer)
@@ -71,25 +74,111 @@ void UHPDataSheetBase::AddRow(int32 rowIndex)
 {
 
 	//SheetBox->InsertChildAt(rowIndex,nullptr);//this shit doesn't update the UI so it is better to regenerate
-
-	//SheetheaderBox->Insert
-	const auto allRows = SheetBox->GetAllChildren();
+ 
+	 const auto allRows = SheetBox->GetAllChildren();
 	for (int32 i = 0; i < allRows.Num(); ++i)
 	{
 		auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
 		sheetRow->RowIndex = i;
-	}
+	} 
 }
 
 void UHPDataSheetBase::DeleteRow(int32 rowIndex)
 {
 	
-	SheetBox->RemoveChildAt(rowIndex);
+	 SheetBox->RemoveChildAt(rowIndex);
 	const auto allRows = SheetBox->GetAllChildren();
 	for (int32 i = 0;i < allRows.Num();++i)
 	{
 		auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
 		sheetRow->RowIndex = i;
+	} 
+}
+
+void UHPDataSheetBase::GeneateDataSheetFromCSV(const FString& csvPath)
+{
+
+	//TODO:
+}
+
+void UHPDataSheetBase::GeneateDataSheetForActor(const FString& actorId)
+{
+	TMap<FString, UVPDynamicActorData> demoData;//this is how the pers map looks in Personalizer.h
+
+	UVPDynamicActorData entry = {};
+	entry.actor = nullptr; //must be populated in real world scenario
+	entry.actorType = EUVPActorType::StaticMesh;
+
+	//add unique prop fpr StaticMesh:
+	entry.actorProps.Add("gltf_file", { "coke.gltf" });
+
+	//add some mat props:
+
+	{//color param
+		UVMaterialPropValue matVal = {};
+		matVal.shaderType = EUVPShaderParamType::Vector;
+		FColor color(255, 255, 0, 255);
+		matVal.cparam = color.ToPackedRGBA(); //will have to pack vector to integer
+		entry.materialParams.Add("baseColor", matVal);
 	}
+
+	{//texture param
+		UVMaterialPropValue matVal = {};
+		matVal.shaderType = EUVPShaderParamType::Sampler;
+		matVal.sval = "textures/albedo.png";
+		entry.materialParams.Add("colorMap", matVal);
+	}
+	
+	demoData.Add("ActorA", entry);
+
+	GeneateDataSheetA(demoData.Find(actorId));
+}
+
+void UHPDataSheetBase::GeneateDataSheetA(const UVPDynamicActorData* actorData)
+{
+	if (actorData == nullptr)
+	{
+		return;
+	}
+
+	// geneate header entries first:
+
+	SheetheaderBox->Reset(true);
+	for (const auto &entry:actorData->actorProps)
+	{
+	  auto headerCell = Cast<UHPSheetHeaderCellBase>(SheetheaderBox->CreateEntry());
+	  check(headerCell);
+	  headerCell->ButtonText->SetText(FText::FromString(entry.Key));
+
+	}
+
+	for (const auto& entry : actorData->materialParams)
+	{
+		auto headerCell = Cast<UHPSheetHeaderCellBase>(SheetheaderBox->CreateEntry());
+		check(headerCell);
+		headerCell->ButtonText->SetText(FText::FromName(entry.Key));
+
+	}
+
+	//generate sheet rows:
+
+	SheetBox->ClearChildren();
+
+	//here we must generate a unique key per row/colum and store it in each row so that when exporting the table
+	//to map we can retrience those
+	//initial setup is just one row, need to see
+	 
+	for (const auto& entry : actorData->actorProps)
+	{
+	 
+
+	}
+
+	for (const auto& entry : actorData->materialParams)
+	{
+	 
+
+	}
+
 }
 
