@@ -19,4 +19,7 @@ public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
 		int32 RowIndex = 0;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
+		class UDynamicEntryBox* rowDataBox = nullptr;
 };

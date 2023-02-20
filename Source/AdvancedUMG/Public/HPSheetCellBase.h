@@ -13,5 +13,17 @@ UCLASS()
 class ADVANCEDUMG_API UHPSheetCellBase : public UUserWidget
 {
 	GENERATED_BODY()
+
+public:
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
+	 	class UEditableTextBox* EditableText = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = HPSheetCellBase)
+		class UUserWidget* ParentRow = nullptr;
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = HPSheetCellBase)
+		class UHPDataSheetBase* ParentSheet = nullptr;
+
 	
 };

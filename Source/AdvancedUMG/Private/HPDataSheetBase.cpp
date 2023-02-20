@@ -2,7 +2,7 @@
 
 
 #include "HPDataSheetBase.h"
-#include "HPSheetRowBase.h"
+
 #include "HPSheetHeaderCellBase.h"
 #include "Components/VerticalBox.h"
 #include "Components/DynamicEntryBox.h"
@@ -167,16 +167,21 @@ void UHPDataSheetBase::GeneateDataSheetA(const UVPDynamicActorData* actorData)
 	//here we must generate a unique key per row/colum and store it in each row so that when exporting the table
 	//to map we can retrience those
 	//initial setup is just one row, need to see
+
+	auto rowWidget =Cast<UHPSheetRowBase>(CreateWidget(this, SheetRowWidgetClass));
+
+	SheetBox->AddChild(rowWidget);
 	 
 	for (const auto& entry : actorData->actorProps)
 	{
-	 
-
+		auto cell = rowWidget->rowDataBox->CreateEntry();
+	
 	}
 
 	for (const auto& entry : actorData->materialParams)
 	{
 	 
+		auto cell = rowWidget->rowDataBox->CreateEntry();
 
 	}
 

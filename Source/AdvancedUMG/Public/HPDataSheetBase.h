@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Blueprint/UserWidget.h"
 #include "HPDataStructures.h"
+#include "HPSheetRowBase.h"
 #include "HPDataSheetBase.generated.h"
 
 /**
@@ -51,7 +52,7 @@ public:
 	* Must be set via editor
 	*/
 	 UPROPERTY(EditAnywhere, Category = HPDataSheetBase)
-		 TSubclassOf<UUserWidget> SheetRowWidgetClass;
+		 TSubclassOf<UHPSheetRowBase> SheetRowWidgetClass;
 
 	 /**
 	 * Must be set via editor
