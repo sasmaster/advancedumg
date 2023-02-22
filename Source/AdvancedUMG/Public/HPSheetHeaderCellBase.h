@@ -18,5 +18,10 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
 		class UTextBlock* ButtonText = nullptr;
-	
+
+	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
+		class UButton* But = nullptr;
+	    
+
+
 };

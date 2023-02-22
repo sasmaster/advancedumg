@@ -16,13 +16,15 @@ class ADVANCEDUMG_API UHPSheetCellBase : public UUserWidget
 
 public:
 
+	FString CellDataKey; // concat of column name (from the header) and row number
+
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
 	 	class UEditableTextBox* EditableText = nullptr;
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = HPSheetCellBase)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = HPSheetCellBase)
 		class UUserWidget* ParentRow = nullptr;
 
-	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, Category = HPSheetCellBase)
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = HPSheetCellBase)
 		class UHPDataSheetBase* ParentSheet = nullptr;
 
 	

@@ -13,12 +13,21 @@ enum class EUVPActorType :uint8
 };
 
 UENUM(BlueprintType, Category = "UVP")
+enum class EUVPActorPropType :uint8
+{
+	String,  //actor which is static mesh
+	FloatValue,   //actor with planar image
+	IntValue,   // text 3D
+};
+
+UENUM(BlueprintType, Category = "UVP")
 //enumerates UE shader params types
 enum class EUVPShaderParamType :uint8
 {
 	Sampler,
 	Vector,//Vector  is alway  color in material
-	Scalar 
+	Scalar ,
+	HexColor // represented by string '0xFFFFFFFF
  
 };
 
@@ -26,6 +35,7 @@ enum class EUVPShaderParamType :uint8
 //for now we avoid polymorphysm by packing both string and numeric 
 struct UVPActorPropValue
 {
+	EUVPActorPropType propType;
 	FString sval;//can be url or asset file name
 
 	union //any numeric value

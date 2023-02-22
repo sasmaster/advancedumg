@@ -14,7 +14,7 @@ class ADVANCEDUMG_API UHPSheetRowBase : public UUserWidget
 {
 	GENERATED_BODY()
 
-		FString mRowKey; // concat of column name (from the header) and row number
+	
 public:
 
 	UPROPERTY(BlueprintReadOnly, VisibleAnywhere)
@@ -22,4 +22,7 @@ public:
 
 	UPROPERTY(BlueprintReadWrite, VisibleAnywhere, meta = (BindWidget))
 		class UDynamicEntryBox* rowDataBox = nullptr;
+
+	UPROPERTY(BlueprintReadOnly, VisibleAnywhere, Category = HPSheetRow)
+		class UHPDataSheetBase* ParentSheet = nullptr;
 };

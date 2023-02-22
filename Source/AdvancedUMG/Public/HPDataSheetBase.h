@@ -70,10 +70,15 @@ public:
 		 void DeleteRow(int32 rowIndex);
 
 	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
-	 void GeneateDataSheetFromCSV(UPARAM(ref) const FString& csvPath);
+	 void GenerateDataSheetFromCSV(UPARAM(ref) const FString& csvPath);
 
 	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
-	 void GeneateDataSheetForActor(UPARAM(ref) const FString& actorId);
+	 void GenerateDataSheetForActor(UPARAM(ref) const FString& actorId);
+
+	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
+		 void SetHeaderColor(FLinearColor color);
+
+
 
 	 UFUNCTION(BlueprintPure, Category = HPDataSheetBase)
 		 UUserWidget* GetRowEditor()

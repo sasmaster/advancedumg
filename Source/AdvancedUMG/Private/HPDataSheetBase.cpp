@@ -3,10 +3,14 @@
 
 #include "HPDataSheetBase.h"
 
-#include "HPSheetHeaderCellBase.h"
 #include "Components/VerticalBox.h"
 #include "Components/DynamicEntryBox.h"
 #include "Components/TextBlock.h"
+#include "Components/EditableTextBox.h"
+#include "Components/Button.h"
+
+#include "HPSheetHeaderCellBase.h"
+#include "HPSheetCellBase.h"
 
 
 
@@ -95,13 +99,13 @@ void UHPDataSheetBase::DeleteRow(int32 rowIndex)
 	} 
 }
 
-void UHPDataSheetBase::GeneateDataSheetFromCSV(const FString& csvPath)
+void UHPDataSheetBase::GenerateDataSheetFromCSV(const FString& csvPath)
 {
 
 	//TODO:
 }
 
-void UHPDataSheetBase::GeneateDataSheetForActor(const FString& actorId)
+void UHPDataSheetBase::GenerateDataSheetForActor(const FString& actorId)
 {
 	TMap<FString, UVPDynamicActorData> demoData;//this is how the pers map looks in Personalizer.h
 
@@ -110,15 +114,15 @@ void UHPDataSheetBase::GeneateDataSheetForActor(const FString& actorId)
 	entry.actorType = EUVPActorType::StaticMesh;
 
 	//add unique prop fpr StaticMesh:
-	entry.actorProps.Add("gltf_file", { "coke.gltf" });
+	entry.actorProps.Add("gltf_file", { EUVPActorPropType::String, "coke.gltf" });
 
 	//add some mat props:
 
 	{//color param
 		UVMaterialPropValue matVal = {};
-		matVal.shaderType = EUVPShaderParamType::Vector;
+		matVal.shaderType = EUVPShaderParamType::HexColor;
 		FColor color(255, 255, 0, 255);
-		matVal.cparam = color.ToPackedRGBA(); //will have to pack vector to integer
+		matVal.sval = color.ToHex();// ToPackedRGBA(); //will have to pack vector to integer
 		entry.materialParams.Add("baseColor", matVal);
 	}
 
@@ -149,7 +153,7 @@ void UHPDataSheetBase::GeneateDataSheetA(const UVPDynamicActorData* actorData)
 	  auto headerCell = Cast<UHPSheetHeaderCellBase>(SheetheaderBox->CreateEntry());
 	  check(headerCell);
 	  headerCell->ButtonText->SetText(FText::FromString(entry.Key));
-
+	 
 	}
 
 	for (const auto& entry : actorData->materialParams)
@@ -160,6 +164,8 @@ void UHPDataSheetBase::GeneateDataSheetA(const UVPDynamicActorData* actorData)
 
 	}
 
+
+	const auto& headerEntries = SheetheaderBox->GetAllEntries();
 	//generate sheet rows:
 
 	SheetBox->ClearChildren();
@@ -169,21 +175,79 @@ void UHPDataSheetBase::GeneateDataSheetA(const UVPDynamicActorData* actorData)
 	//initial setup is just one row, need to see
 
 	auto rowWidget =Cast<UHPSheetRowBase>(CreateWidget(this, SheetRowWidgetClass));
-
+	rowWidget->RowIndex = 0;
+	rowWidget->ParentSheet = this;
 	SheetBox->AddChild(rowWidget);
-	 
+	uint32 cellIndexInRow = 0;
 	for (const auto& entry : actorData->actorProps)
 	{
-		auto cell = rowWidget->rowDataBox->CreateEntry();
-	
+		auto cell = Cast<UHPSheetCellBase>(rowWidget->rowDataBox->CreateEntry());
+
+		switch (entry.Value.propType)
+		{
+		case EUVPActorPropType::String:
+			cell->EditableText->SetText(FText::FromString(entry.Value.sval));
+			break;
+		case EUVPActorPropType::FloatValue:
+			cell->EditableText->SetText(FText::FromString(FString::SanitizeFloat(entry.Value.fval)));
+			break;
+		case EUVPActorPropType::IntValue:
+			cell->EditableText->SetText(FText::FromString(FString::FromInt(entry.Value.ival)));
+			break;
+		default:
+			check(0);
+		}
+
+		cell->CellDataKey = FString::Format(TEXT("{0}{1}"),
+			{
+				Cast<UHPSheetHeaderCellBase>(headerEntries[cellIndexInRow])->ButtonText->Text.ToString(),
+			    FString::FromInt(rowWidget->RowIndex)
+			});
+		cell->ParentRow = rowWidget;
+		cell->ParentSheet = this;
+		cellIndexInRow++;
 	}
 
 	for (const auto& entry : actorData->materialParams)
 	{
 	 
-		auto cell = rowWidget->rowDataBox->CreateEntry();
+		auto cell = Cast<UHPSheetCellBase>(rowWidget->rowDataBox->CreateEntry());
 
+		switch (entry.Value.shaderType)
+		{
+		case EUVPShaderParamType::Sampler:
+			cell->EditableText->SetText(FText::FromString(entry.Value.sval));
+			break;
+		case EUVPShaderParamType::Vector: //we implu that vec4 here is color
+			//need to decode it into vector
+		{
+			const auto color = FColor((uint32)entry.Value.cparam);
+			cell->EditableText->SetText(FText::Format(FTextFormat::FromString("r:%,g:%,b:%,a:%"), color.R, color.G, color.B, color.A));
+		}
+			break;
+		case EUVPShaderParamType::HexColor:
+			cell->EditableText->SetText(FText::FromString(entry.Value.sval));
+			break;
+		case EUVPShaderParamType::Scalar: // scalar is float for material
+			cell->EditableText->SetText(FText::FromString(FString::SanitizeFloat(entry.Value.fparam)));
+			break;
+		default:
+			check(0);
+		}
+
+		cell->ParentRow = rowWidget;
+		cell->ParentSheet = this;
+		cellIndexInRow++;
 	}
 
+}
+
+void UHPDataSheetBase::SetHeaderColor(FLinearColor color)
+{
+	const auto& entries = SheetheaderBox->GetAllEntries();
+	for (auto entry: entries)
+	{
+		Cast<UHPSheetHeaderCellBase>(entry)->But->SetBackgroundColor(color);
+	}
 }
 
