@@ -6,6 +6,7 @@
 #include "Blueprint/UserWidget.h"
 #include "HPDataStructures.h"
 #include "HPSheetRowBase.h"
+#include "HPSheetRowEditorBase.h"
 #include "HPDataSheetBase.generated.h"
 
 /**
@@ -17,14 +18,23 @@ class ADVANCEDUMG_API UHPDataSheetBase : public UUserWidget
 	GENERATED_BODY()
 
 		UPROPERTY()
-		UUserWidget* RowEditor = nullptr;
+		UHPSheetRowEditorBase* RowEditor = nullptr;
  
 protected:
 
 	void NativeConstruct() override final;
 
+	//callback
 	UFUNCTION()
 	 void OnDataSheetVisibilityChanged(ESlateVisibility v);
+
+	//callback
+	UFUNCTION()
+		void OnAddRowButtonClicked();
+
+	//callback
+	UFUNCTION()
+		void OnRemoveRowButtonClicked();
 
 	 void GeneateDataSheetA(const UVPDynamicActorData* actorData);
 
@@ -46,7 +56,7 @@ public:
 	* Must be set via editor
 	*/
 	 UPROPERTY(EditAnywhere, Category = HPDataSheetBase)
-	 TSubclassOf<UUserWidget> RowEditorWidgetClass;
+	 TSubclassOf<UHPSheetRowEditorBase> RowEditorWidgetClass;
 
 	/**
 	* Must be set via editor

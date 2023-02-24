@@ -26,10 +26,13 @@ void UHPDataSheetBase::NativeConstruct()
 
 	if (RowEditorWidgetClass.Get())
 	{
-		RowEditor = CreateWidget<UUserWidget>(GetOwningPlayer(), RowEditorWidgetClass);
+		RowEditor = CreateWidget<UHPSheetRowEditorBase>(GetOwningPlayer(), RowEditorWidgetClass);
 		check(RowEditor);
 		RowEditor->AddToViewport(100);
 		RowEditor->SetVisibility(ESlateVisibility::Collapsed);
+
+		RowEditor->AddRowButt->OnClicked.AddDynamic(this, &UHPDataSheetBase::OnAddRowButtonClicked);
+		RowEditor->RemoveRowButt->OnClicked.AddDynamic(this, &UHPDataSheetBase::OnRemoveRowButtonClicked);
 	}
 	else
 	{
@@ -38,6 +41,16 @@ void UHPDataSheetBase::NativeConstruct()
 
 	 
 	this->OnVisibilityChanged.AddDynamic(this, &UHPDataSheetBase::OnDataSheetVisibilityChanged);
+}
+
+void UHPDataSheetBase::OnAddRowButtonClicked()
+{
+	AddRow(RowEditor->ClickedRow);
+}
+
+void UHPDataSheetBase::OnRemoveRowButtonClicked()
+{
+	DeleteRow(RowEditor->ClickedRow);
 }
 
 void UHPDataSheetBase::OnDataSheetVisibilityChanged(ESlateVisibility v)
@@ -77,14 +90,32 @@ void UHPDataSheetBase::ShowRowEditor(bool val)
 void UHPDataSheetBase::AddRow(int32 rowIndex)
 {
 
+ 
+
+	auto rowWidget = Cast<UHPSheetRowBase>(CreateWidget(this, SheetRowWidgetClass));
+	rowWidget->RowIndex = rowIndex;
+	rowWidget->ParentSheet = this;
+	//SheetBox->AddChild(rowWidget);
+
+	SheetBox->InsertChildAt(rowIndex, rowWidget);
+ 
+	const auto numCells = SheetheaderBox->GetAllEntries().Num();
+	for (int32 i = 0; i < numCells; i++)
+	{
+		auto cell = Cast<UHPSheetCellBase>(rowWidget->rowDataBox->CreateEntry());
+		cell->EditableText->SetText(FText::FromString("New cell"));
+		cell->ParentRow = rowWidget;
+		cell->ParentSheet = this;
+	}
+
 	//SheetBox->InsertChildAt(rowIndex,nullptr);//this shit doesn't update the UI so it is better to regenerate
  
-	 const auto allRows = SheetBox->GetAllChildren();
+	/* const auto allRows = SheetBox->GetAllChildren();
 	for (int32 i = 0; i < allRows.Num(); ++i)
 	{
 		auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
 		sheetRow->RowIndex = i;
-	} 
+	} */
 }
 
 void UHPDataSheetBase::DeleteRow(int32 rowIndex)
