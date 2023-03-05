@@ -90,44 +90,45 @@ void UHPDataSheetBase::ShowRowEditor(bool val)
 void UHPDataSheetBase::AddRow(int32 rowIndex)
 {
 
- 
-
-	auto rowWidget = Cast<UHPSheetRowBase>(CreateWidget(this, SheetRowWidgetClass));
-	rowWidget->RowIndex = rowIndex;
-	rowWidget->ParentSheet = this;
-	//SheetBox->AddChild(rowWidget);
-
-	SheetBox->InsertChildAt(rowIndex, rowWidget);
- 
+	auto sheetRow = Cast<UHPSheetRowBase>(CreateWidget(this, SheetRowWidgetClass));
+	sheetRow->ParentSheet = this;
+	//generate cells:
 	const auto numCells = SheetheaderBox->GetAllEntries().Num();
 	for (int32 i = 0; i < numCells; i++)
 	{
-		auto cell = Cast<UHPSheetCellBase>(rowWidget->rowDataBox->CreateEntry());
-		cell->EditableText->SetText(FText::FromString("New cell"));
-		cell->ParentRow = rowWidget;
+		auto cell = Cast<UHPSheetCellBase>(sheetRow->rowDataBox->CreateEntry());
+		cell->EditableText->SetText(FText::FromString("---"));
+		cell->ParentRow = sheetRow;
 		cell->ParentSheet = this;
 	}
 
-	//SheetBox->InsertChildAt(rowIndex,nullptr);//this shit doesn't update the UI so it is better to regenerate
- 
-	/* const auto allRows = SheetBox->GetAllChildren();
-	for (int32 i = 0; i < allRows.Num(); ++i)
+	//insdrt the row in the index we want in the copyed array
+	auto existingRows = SheetBox->GetAllChildren(); // InsertChildAt(rowIndex, rowWidget);
+	existingRows.Insert(sheetRow, rowIndex);
+
+	SheetBox->ClearChildren();
+	 //put updated array into box and update their indices:
+	const int32 numRows = existingRows.Num();
+	for (int32 i = 0; i < numRows; i++)
 	{
-		auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
+		sheetRow = Cast<UHPSheetRowBase>(existingRows[i]);
 		sheetRow->RowIndex = i;
-	} */
+		SheetBox->AddChild(sheetRow);
+	}
 }
 
 void UHPDataSheetBase::DeleteRow(int32 rowIndex)
 {
 	
-	 SheetBox->RemoveChildAt(rowIndex);
-	const auto allRows = SheetBox->GetAllChildren();
-	for (int32 i = 0;i < allRows.Num();++i)
+	if (SheetBox->RemoveChildAt(rowIndex))
 	{
-		auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
-		sheetRow->RowIndex = i;
-	} 
+		const auto allRows = SheetBox->GetAllChildren();
+		for (int32 i = 0; i < allRows.Num(); ++i)
+		{
+			auto sheetRow = Cast<UHPSheetRowBase>(allRows[i]);
+			sheetRow->RowIndex = i;
+		}
+	}
 }
 
 void UHPDataSheetBase::GenerateDataSheetFromCSV(const FString& csvPath)
@@ -138,32 +139,38 @@ void UHPDataSheetBase::GenerateDataSheetFromCSV(const FString& csvPath)
 
 void UHPDataSheetBase::GenerateDataSheetForActor(const FString& actorId)
 {
-	TMap<FString, UVPDynamicActorData> demoData;//this is how the pers map looks in Personalizer.h
+	TMap<FString,UVPDynamicActorData> demoData;//this is how the pers map looks in Personalizer.h
 
 	UVPDynamicActorData entry = {};
 	entry.actor = nullptr; //must be populated in real world scenario
 	entry.actorType = EUVPActorType::StaticMesh;
 
-	//add unique prop fpr StaticMesh:
-	entry.actorProps.Add("gltf_file", { EUVPActorPropType::String, "coke.gltf" });
 
+	entry.props.Emplace();
+	UVPDynamicActorData::DynamicPropsMap& propsMap = entry.props[0];
+	//add unique prop fpr StaticMesh:
+
+	propsMap.Add("gltf_file",{ EUVPDynamicPropType::ActorProp,EUVPDynamicPropDataType::FilePath, "coke.gltf" });
+ 
 	//add some mat props:
 
 	{//color param
-		UVMaterialPropValue matVal = {};
-		matVal.shaderType = EUVPShaderParamType::HexColor;
+		UVPDynamicPropValue matProp = {};
+		matProp.propType = EUVPDynamicPropType::MaterialProp;
+		matProp.propDataType = EUVPDynamicPropDataType::Color;
 		FColor color(255, 255, 0, 255);
-		matVal.sval = color.ToHex();// ToPackedRGBA(); //will have to pack vector to integer
-		entry.materialParams.Add("baseColor", matVal);
+		matProp.uival = color.ToPackedRGBA(); 
+		propsMap.Add("baseColor",matProp);
 	}
 
 	{//texture param
-		UVMaterialPropValue matVal = {};
-		matVal.shaderType = EUVPShaderParamType::Sampler;
-		matVal.sval = "textures/albedo.png";
-		entry.materialParams.Add("colorMap", matVal);
+		UVPDynamicPropValue matProp = {};
+		matProp.propType = EUVPDynamicPropType::MaterialProp;
+		matProp.propDataType = EUVPDynamicPropDataType::FilePath;
+		matProp.sval = "textures/albedo.png";
+		propsMap.Add("colorMap",matProp);
 	}
-	
+
 	demoData.Add("ActorA", entry);
 
 	GeneateDataSheetA(demoData.Find(actorId));
@@ -179,7 +186,7 @@ void UHPDataSheetBase::GeneateDataSheetA(const UVPDynamicActorData* actorData)
 	// geneate header entries first:
 
 	SheetheaderBox->Reset(true);
-	for (const auto &entry:actorData->actorProps)
+	for (const auto &entry : actorData->props[0])
 	{
 	  auto headerCell = Cast<UHPSheetHeaderCellBase>(SheetheaderBox->CreateEntry());
 	  check(headerCell);
@@ -187,90 +194,85 @@ void UHPDataSheetBase::GeneateDataSheetA(const UVPDynamicActorData* actorData)
 	 
 	}
 
-	for (const auto& entry : actorData->materialParams)
-	{
-		auto headerCell = Cast<UHPSheetHeaderCellBase>(SheetheaderBox->CreateEntry());
-		check(headerCell);
-		headerCell->ButtonText->SetText(FText::FromName(entry.Key));
-
-	}
-
-
 	const auto& headerEntries = SheetheaderBox->GetAllEntries();
 	//generate sheet rows:
 
 	SheetBox->ClearChildren();
 
-	//here we must generate a unique key per row/colum and store it in each row so that when exporting the table
-	//to map we can retrience those
-	//initial setup is just one row, need to see
-
-	auto rowWidget =Cast<UHPSheetRowBase>(CreateWidget(this, SheetRowWidgetClass));
-	rowWidget->RowIndex = 0;
-	rowWidget->ParentSheet = this;
-	SheetBox->AddChild(rowWidget);
-	uint32 cellIndexInRow = 0;
-	for (const auto& entry : actorData->actorProps)
-	{
-		auto cell = Cast<UHPSheetCellBase>(rowWidget->rowDataBox->CreateEntry());
-
-		switch (entry.Value.propType)
-		{
-		case EUVPActorPropType::String:
-			cell->EditableText->SetText(FText::FromString(entry.Value.sval));
-			break;
-		case EUVPActorPropType::FloatValue:
-			cell->EditableText->SetText(FText::FromString(FString::SanitizeFloat(entry.Value.fval)));
-			break;
-		case EUVPActorPropType::IntValue:
-			cell->EditableText->SetText(FText::FromString(FString::FromInt(entry.Value.ival)));
-			break;
-		default:
-			check(0);
-		}
-
-		cell->CellDataKey = FString::Format(TEXT("{0}{1}"),
-			{
-				Cast<UHPSheetHeaderCellBase>(headerEntries[cellIndexInRow])->ButtonText->Text.ToString(),
-			    FString::FromInt(rowWidget->RowIndex)
-			});
-		cell->ParentRow = rowWidget;
-		cell->ParentSheet = this;
-		cellIndexInRow++;
-	}
-
-	for (const auto& entry : actorData->materialParams)
+	//generate row per UVPDynamicPropValue in props array
+	for (const auto& propsMap : actorData->props)
 	{
 	 
-		auto cell = Cast<UHPSheetCellBase>(rowWidget->rowDataBox->CreateEntry());
+		auto rowWidget = Cast<UHPSheetRowBase>(CreateWidget(this, SheetRowWidgetClass));
+		rowWidget->RowIndex = 0;
+		rowWidget->ParentSheet = this;
+		SheetBox->AddChild(rowWidget);
+		uint32 cellIndexInRow = 0;
 
-		switch (entry.Value.shaderType)
-		{
-		case EUVPShaderParamType::Sampler:
-			cell->EditableText->SetText(FText::FromString(entry.Value.sval));
-			break;
-		case EUVPShaderParamType::Vector: //we implu that vec4 here is color
-			//need to decode it into vector
-		{
-			const auto color = FColor((uint32)entry.Value.cparam);
-			cell->EditableText->SetText(FText::Format(FTextFormat::FromString("r:%,g:%,b:%,a:%"), color.R, color.G, color.B, color.A));
-		}
-			break;
-		case EUVPShaderParamType::HexColor:
-			cell->EditableText->SetText(FText::FromString(entry.Value.sval));
-			break;
-		case EUVPShaderParamType::Scalar: // scalar is float for material
-			cell->EditableText->SetText(FText::FromString(FString::SanitizeFloat(entry.Value.fparam)));
-			break;
-		default:
-			check(0);
-		}
+		//const auto& propArray = propEntry.Value;
 
-		cell->ParentRow = rowWidget;
-		cell->ParentSheet = this;
-		cellIndexInRow++;
+		for (const auto& propEntry : propsMap)
+		{
+			auto cell = Cast<UHPSheetCellBase>(rowWidget->rowDataBox->CreateEntry());
+			const UVPDynamicPropValue& propValue =  propEntry.Value;
+			switch (propValue.propDataType)
+			{
+			case EUVPDynamicPropDataType::FilePath:
+				cell->EditableText->SetText(FText::FromString(propValue.sval));
+				break;
+			case EUVPDynamicPropDataType::Color:
+
+				cell->EditableText->SetText(FText::FromString(FColor(propValue.uival).ToHex()));
+				break;
+			case EUVPDynamicPropDataType::ScalarFloat:
+				cell->EditableText->SetText(FText::FromString(FString::SanitizeFloat(propValue.fval)));
+				break;
+			case EUVPDynamicPropDataType::ScalarInt:
+				cell->EditableText->SetText(FText::FromString(FString::FromInt(propValue.uival)));
+				break;
+			case EUVPDynamicPropDataType::Vector4:
+				cell->EditableText->SetText(FText::FromString(FVector4(propValue.vval[0], propValue.vval[1], propValue.vval[2], propValue.vval[3]).ToString()));
+				//	cell->EditableText->SetText(FText::Format(FTextFormat::FromString("r:%,g:%,b:%,a:%"), color.R, color.G, color.B, color.A));
+				break;
+			default:
+				check(0);
+			}
+
+			cell->CellDataKey = FString::Format(TEXT("{0}{1}"),
+				{
+					Cast<UHPSheetHeaderCellBase>(headerEntries[cellIndexInRow])->ButtonText->Text.ToString(),
+					FString::FromInt(rowWidget->RowIndex)
+				});
+			cell->ParentRow = rowWidget;
+			cell->ParentSheet = this;
+			cell->actorType = actorData->actorType;
+			cell->actorPtr = actorData->actor; //we want to reflect change in runtime on the actor while cell data is edited
+			cell->propType = propValue.propType;
+			cell->propName = propEntry.Key;
+
+			cellIndexInRow++;
+		}
 	}
 
+}
+
+void UHPDataSheetBase::GenerateDataMapFromSheet(const FString& actorId)
+{
+
+	TMap<FString, TArray<UVPDynamicActorData>> demoData;//this is how the pers map looks in Personalizer.h
+
+	TArray<UVPDynamicActorData>& arr = demoData[actorId];
+
+	const auto rows = SheetBox->GetAllChildren();
+	for (auto rowWidget: rows)
+	{
+		UVPDynamicActorData dataEntry = {};
+		//each row is an actor with props:
+	    auto row = Cast<UHPSheetRowBase>(rowWidget);
+		dataEntry.actor = nullptr;// will be provided next iteration
+		dataEntry.actorType = EUVPActorType::StaticMesh;// probably need to pass in actor type as apram or cache on sheet generaion
+
+	}
 }
 
 void UHPDataSheetBase::SetHeaderColor(FLinearColor color)

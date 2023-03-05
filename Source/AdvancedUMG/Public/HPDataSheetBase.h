@@ -86,6 +86,9 @@ public:
 	 void GenerateDataSheetForActor(UPARAM(ref) const FString& actorId);
 
 	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
+		 void GenerateDataMapFromSheet(UPARAM(ref) const FString& filePath);
+
+	 UFUNCTION(BlueprintCallable, Category = HPDataSheetBase)
 		 void SetHeaderColor(FLinearColor color);
 
 
